@@ -14,18 +14,18 @@ To use the `convert-images-webp.sh` script, follow these steps:
 
 2. **Run the Script**: Execute the script using the following command:
 
-```sh
-./convert-images-webp.sh [input_directory] [output_directory]
-```
-
-- **input_directory**: The directory containing the images to be converted. If not provided, the current directory will be used.
-- **output_directory**: The directory where the converted images will be saved. This is a required argument.
-
-For example:
-
-```sh
-./convert-images-webp.sh ./images ./webp-images
-```
+    ```sh
+    ./convert-images-webp.sh [input_directory] [output_directory]
+    ```
+    
+    - **input_directory**: The directory containing the images to be converted. If not provided, the current directory will be used.
+    - **output_directory**: The directory where the converted images will be saved. This is a required argument.
+    
+    For example:
+    
+    ```sh
+    ./convert-images-webp.sh ./images ./webp-images
+    ```
 
 This command will convert all supported images in the `./images` directory to WebP format and save them in the `./webp-images` directory.
 

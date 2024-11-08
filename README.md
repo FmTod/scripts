@@ -2,6 +2,12 @@
 
 This repository contains various utility scripts to help with everyday tasks. The focus is on simplicity and usability.
 
+You can run the scripts directly from the repo like so:
+
+```sh
+bash <(wget -qO- https://raw.githubusercontent.com/FmTod/scripts/refs/heads/master/<file>) <arguments...>
+```
+
 ## Script: convert-images-webp.sh
 
 This script converts image files from various formats (jpg, jpeg, png, bmp, gif, tiff) to the WebP format.
@@ -16,6 +22,10 @@ To use the `convert-images-webp.sh` script, follow these steps:
 
     ```sh
     ./convert-images-webp.sh [input_directory] [output_directory]
+    ```
+    or you can run it directly:
+    ```sh
+    bash <(wget -qO- https://raw.githubusercontent.com/FmTod/scripts/refs/heads/master/convert-images-webp.sh) [input_directory] [output_directory]
     ```
     
     - **input_directory**: The directory containing the images to be converted. If not provided, the current directory will be used.

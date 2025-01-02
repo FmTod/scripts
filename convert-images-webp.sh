@@ -37,7 +37,7 @@ fi
 mkdir -p "$output_dir"
 
 # List of image file extensions to include
-extensions="jpg jpeg png bmp gif tiff"
+extensions="jpg jpeg png bmp gif tiff webp"
 
 # Function to convert images to .webp and preserve directory structure
 convert_images() {
@@ -60,6 +60,13 @@ convert_images() {
     # Check if the output file already exists
     if [[ -f "$output_file" ]]; then
       echo "Skipping '$file' as the converted file already exists."
+      continue
+    fi
+
+    # if file is already in webp we just copy it
+    if [[ "$file" == *.webp ]]; then
+      echo "File '$file' already in webp format, copying it to '$output_file'"
+      cp "$file" "$output_file"
       continue
     fi
 

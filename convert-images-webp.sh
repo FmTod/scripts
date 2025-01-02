@@ -63,15 +63,15 @@ convert_images() {
       continue
     fi
 
+    # Create target directory if it doesn't exist
+    mkdir -p "$output_dir_path"
+
     # if file is already in webp we just copy it
     if [[ "$file" == *.webp ]]; then
       echo "File '$file' already in webp format, copying it to '$output_file'"
       cp "$file" "$output_file"
       continue
     fi
-
-    # Create target directory if it doesn't exist
-    mkdir -p "$output_dir_path"
 
     # Convert the file to .webp
     cwebp -q 80 "$file" -o "$output_file"

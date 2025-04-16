@@ -220,7 +220,7 @@ To use these scripts, follow these steps:
    ```sh
    python build-sql.py
    ```
-   This creates a SQL file with ALTER TABLE statements based on the analysis.
+   This creates an SQL file with ALTER TABLE statements based on the analysis.
 
 ### Key Features
 

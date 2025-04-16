@@ -1,0 +1,10 @@
+{
+    "host": "localhost",
+    "user": "user",
+    "password": "password",
+    "central_db": "database",
+    "tenant_db_pattern": "tenant",
+    "output_file": "schema_optimization_report.csv",
+    "max_workers": 1,
+    "log_level": "INFO"
+}

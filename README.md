@@ -56,6 +56,54 @@ This command will convert all supported images in the `./images` directory to We
 For more details, check the script [here](https://github.com/FmTod/scripts/blob/master/convert-images-webp.sh).
 </details>
 
+## Script: convert-videos-webm.sh
+
+This script converts video files from various formats to the WebM format.
+
+<details>
+<summary>Details</summary>
+
+### Usage
+
+To use the `convert-videos-webm.sh` script, follow these steps:
+
+1. **Install Dependencies**: Ensure that `ffmpeg` is installed on your system. The script will prompt you to install it if it's not found.
+
+2. **Run the Script**: Execute the script using the following command:
+
+    ```sh
+    ./convert-videos-webm.sh [input_directory] [output_directory]
+    ```
+   or you can run it directly:
+    ```sh
+    bash <(curl -fsSL https://fmtod.com/scripts?f=convert-videos-webm.sh) [input_directory] [output_directory]
+    ```
+
+    - **input_directory**: The directory containing the videos to be converted. If not provided, the current directory will be used.
+    - **output_directory**: The directory where the converted videos will be saved. This is a required argument.
+
+   For example:
+
+    ```sh
+    ./convert-videos-webm.sh ./videos ./webm-videos
+    ```
+
+This command will convert all supported videos in the `./videos` directory to WebM format and save them in the `./webm-videos` directory.
+
+### Script Details
+
+- The script checks if `ffmpeg` is installed and offers to install it if not.
+- It processes all videos in the specified input directory and converts them to WebM format, preserving the directory structure.
+- The script supports the following video formats: mp4, etc.
+
+### Additional Information
+
+- The script creates the output directory if it does not exist.
+- It skips converting videos if the WebM version already exists in the output directory.
+
+For more details, check the script [here](https://github.com/FmTod/scripts/blob/master/convert-videos-webm.sh).
+</details>
+
 ## Script: pg-dump.sh
 
 This script is designed to dump all data from a PostgreSQL server into an SQL file and optionally compress it using `tar` and `pigz`.

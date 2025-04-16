@@ -177,3 +177,66 @@ To use the `pg_dump_compress.sh` script, follow these steps:
 For more details, check the script [here](https://github.com/FmTod/scripts/blob/master/pg_dump_compress.sh).
 
 </details>
+
+## Database Column Optimization
+
+These Python scripts analyze database columns and generate SQL statements to optimize column data types based on actual content.
+
+<details>
+<summary>Details</summary>
+
+### Overview
+
+The Database Column Optimization toolkit includes two main Python scripts:
+
+1. **analyze-columns.py**: Analyzes a MySQL/MariaDB database schema to identify oversized column types based on actual data content.
+2. **build-sql.py**: Generates SQL ALTER TABLE statements to implement the recommended optimizations.
+
+### Usage
+
+To use these scripts, follow these steps:
+
+1. **Setup Configuration**: Create a `config.json` file with your database connection details:
+   ```json
+   {
+     "host": "localhost",
+     "user": "username",
+     "password": "password",
+     "central_db": "main_database",
+     "tenant_db_pattern": "tenant_%",
+     "max_workers": 5,
+     "log_level": "INFO",
+     "output_file": "schema_optimization_report.csv"
+   }
+   ```
+
+2. **Run Analysis**:
+   ```sh
+   python analyze-columns.py
+   ```
+   This generates a CSV report with optimization recommendations.
+
+3. **Generate SQL**:
+   ```sh
+   python build-sql.py
+   ```
+   This creates a SQL file with ALTER TABLE statements based on the analysis.
+
+### Key Features
+
+- Identifies oversized VARCHAR, INT, TEXT, and other column types
+- Analyzes multiple databases in parallel
+- Generates detailed reports of optimization opportunities
+- Creates ready-to-use SQL statements for implementation
+- Supports both single-database and multi-tenant environments
+
+### Important Notes
+
+- Always review generated SQL statements before execution
+- Test changes in a non-production environment first
+- Take database backups before applying schema changes
+
+For more detailed information, see the [full documentation](https://github.com/FmTod/scripts/tree/master/optimze-database-columns).
+
+</details>
+`

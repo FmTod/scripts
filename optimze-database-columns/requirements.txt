@@ -27,4 +27,4 @@ thread==2.0.5
 toml==0.10.2
 tornado==6.4.2
 xmlrpclib==1.0.1
-zipp==1.0.0
+zipp==3.19.1

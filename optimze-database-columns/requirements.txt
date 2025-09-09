@@ -17,7 +17,7 @@ lxml==5.3.2
 nacl==0.0.0
 numpy==2.2.4
 ordereddict==1.1
-Pillow==11.2.1
+Pillow==11.3.0
 protobuf==6.30.2
 pyOpenSSL==21.0.0
 pyOpenSSL==25.0.0

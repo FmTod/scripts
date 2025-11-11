@@ -22,6 +22,7 @@ REGION="us-mia-1"
 ENDPOINT_URL=""
 RECURSIVE=false
 VERBOSE=false
+JOBS=8
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -37,6 +38,10 @@ while [[ $# -gt 0 ]]; do
         --verbose|-v)
             VERBOSE=true
             shift
+            ;;
+        --jobs|-j)
+            JOBS="$2"
+            shift 2
             ;;
         --extensions|-e)
             EXTENSIONS="$2"
@@ -65,6 +70,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --dry-run            Preview changes without applying them"
             echo "  --recursive          Search for files recursively in subdirectories"
             echo "  -v, --verbose        Show detailed s4cmd output"
+            echo "  -j, --jobs           Number of parallel jobs (default: 8, requires GNU parallel)"
             echo "  -e, --extensions     Comma-separated file extensions (default: webp)"
             echo "  -t, --content-type   Content-Type header (default: image/webp)"
             echo "  -r, --region         S3 region (default: us-mia-1)"
@@ -75,6 +81,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 my-bucket images/ --dry-run"
             echo "  $0 my-bucket images/ --recursive"
             echo "  $0 my-bucket images/ --verbose"
+            echo "  $0 my-bucket images/ --jobs 16"
             echo "  $0 my-bucket --extensions webp,jpg,png --content-type image/webp"
             echo "  $0 my-bucket videos/ --extensions webm --content-type video/webm"
             echo "  $0 my-bucket --region us-east-1"
@@ -121,6 +128,12 @@ for ext in "${EXT_ARRAY[@]}"; do
     fi
 done
 
+# Check if parallel is available
+HAS_PARALLEL=false
+if command -v parallel &> /dev/null; then
+    HAS_PARALLEL=true
+fi
+
 if [ "$DRY_RUN" = true ]; then
     echo "DRY RUN MODE - No changes will be made"
     echo ""
@@ -129,6 +142,11 @@ fi
 echo "Processing files in s3://${BUCKET}/${PREFIX}"
 echo "Endpoint URL: ${ENDPOINT_URL}"
 echo "Mode: $([ "$RECURSIVE" = true ] && echo "Recursive" || echo "Non-recursive")"
+if [ "$HAS_PARALLEL" = true ] && [ "$DRY_RUN" = false ]; then
+    echo "Parallel processing: Enabled (${JOBS} jobs)"
+else
+    echo "Parallel processing: Disabled"
+fi
 echo "Extensions: ${EXTENSIONS}"
 echo "Content-Type: ${CONTENT_TYPE}"
 echo "Cache-Control: ${CACHE_CONTROL}"
@@ -148,38 +166,108 @@ if [ "$VERBOSE" = true ]; then
     echo ""
 fi
 
-$LS_CMD "s3://${BUCKET}/${PREFIX}" --endpoint-url "${ENDPOINT_URL}" 2>&1 | tee >([ "$VERBOSE" = true ] && cat >&2 || cat > /dev/null) | grep -iE "${GREP_PATTERN}" | awk '{print $NF}' | while read -r file; do
-    if [ "$DRY_RUN" = true ]; then
-        echo "Would update metadata for: ${file}"
+# Function to update a single file's metadata
+update_file() {
+    local file="$1"
+    local content_type="$2"
+    local cache_control="$3"
+    local endpoint_url="$4"
+    local verbose="$5"
+    
+    echo "Updating metadata for: ${file}"
+    
+    if [ "$verbose" = true ]; then
+        s4cmd cp \
+            --force \
+            --API-ACL=public-read \
+            --API-MetadataDirective=REPLACE \
+            --API-ContentType="${content_type}" \
+            --API-CacheControl="${cache_control}" \
+            --endpoint-url "${endpoint_url}" \
+            "${file}" "${file}"
+        EXIT_CODE=$?
     else
-        echo "Updating metadata for: ${file}"
-        
-        # Copy file to itself with new metadata (this updates the metadata)
-        if [ "$VERBOSE" = true ]; then
-            s4cmd cp \
-                --API-ACL=public-read \
-                --API-ContentType="${CONTENT_TYPE}" \
-                --API-CacheControl="${CACHE_CONTROL}" \
-                --endpoint-url "${ENDPOINT_URL}" \
-                "${file}" "${file}"
-            EXIT_CODE=$?
-        else
-            s4cmd cp \
-                --API-ACL=public-read \
-                --API-ContentType="${CONTENT_TYPE}" \
-                --API-CacheControl="${CACHE_CONTROL}" \
-                --endpoint-url "${ENDPOINT_URL}" \
-                "${file}" "${file}" 2>&1 | grep -v "^copy:" | grep -v "^$" || true
-            EXIT_CODE=${PIPESTATUS[0]}
-        fi
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "  ✓ Successfully updated"
-        else
-            echo "  ✗ Failed to update"
-        fi
+        s4cmd cp \
+            --force \
+            --API-ACL=public-read \
+            --API-MetadataDirective=REPLACE \
+            --API-ContentType="${content_type}" \
+            --API-CacheControl="${cache_control}" \
+            --endpoint-url "${endpoint_url}" \
+            "${file}" "${file}" 2>&1 | grep -v "^copy:" | grep -v "^$" || true
+        EXIT_CODE=${PIPESTATUS[0]}
     fi
-done
+    
+    if [ $EXIT_CODE -eq 0 ]; then
+        echo "  ✓ Successfully updated: ${file}"
+    else
+        echo "  ✗ Failed to update: ${file}"
+        return 1
+    fi
+}
+
+# Export function and variables for parallel
+export -f update_file
+export CONTENT_TYPE
+export CACHE_CONTROL
+export ENDPOINT_URL
+export VERBOSE
+
+# Get list of files
+FILE_LIST=$($LS_CMD "s3://${BUCKET}/${PREFIX}" --endpoint-url "${ENDPOINT_URL}" 2>&1 | \
+    tee >([ "$VERBOSE" = true ] && cat >&2 || cat > /dev/null) | \
+    grep -iE "${GREP_PATTERN}" | \
+    awk '{print $NF}')
+
+# Count files
+FILE_COUNT=$(echo "$FILE_LIST" | grep -c '^' || echo "0")
+
+if [ "$FILE_COUNT" -eq 0 ]; then
+    echo "No matching files found."
+    exit 0
+fi
+
+echo "Found ${FILE_COUNT} file(s) to process"
+echo ""
+
+if [ "$DRY_RUN" = true ]; then
+    # Dry run: just list files
+    echo "$FILE_LIST" | while read -r file; do
+        echo "Would update metadata for: ${file}"
+    done
+else
+    # Process files
+    if [ "$HAS_PARALLEL" = true ] && [ "$FILE_COUNT" -gt 1 ]; then
+        # Use GNU parallel for concurrent processing
+        echo "Processing files in parallel with ${JOBS} jobs..."
+        echo ""
+        
+        # Use environment variables instead of passing as arguments to avoid quoting issues
+        echo "$FILE_LIST" | parallel -j "$JOBS" --line-buffer --tagstring "[{}]" \
+            update_file {} \"\$CONTENT_TYPE\" \"\$CACHE_CONTROL\" \"\$ENDPOINT_URL\" \"\$VERBOSE\"
+        
+        PARALLEL_EXIT=$?
+        if [ $PARALLEL_EXIT -ne 0 ]; then
+            echo ""
+            echo "Warning: Some files failed to update (exit code: $PARALLEL_EXIT)"
+        fi
+    else
+        # Sequential processing (no parallel or single file)
+        if [ "$FILE_COUNT" -eq 1 ]; then
+            echo "Processing single file..."
+        else
+            echo "Processing files sequentially..."
+            if [ "$HAS_PARALLEL" = false ]; then
+                echo "(Install GNU parallel with: apt-get install parallel OR brew install parallel)"
+            fi
+        fi
+        echo ""
+        
+        echo "$FILE_LIST" | while read -r file; do
+            update_file "$file" "$CONTENT_TYPE" "$CACHE_CONTROL" "$ENDPOINT_URL" "$VERBOSE"
+        done
+    fi
+fi
 
 echo ""
 if [ "$DRY_RUN" = true ]; then

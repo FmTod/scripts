@@ -20,7 +20,7 @@ ordereddict==1.1
 Pillow==11.2.1
 protobuf==6.30.2
 pyOpenSSL==21.0.0
-pyOpenSSL==25.0.0
+pyOpenSSL==26.0.0
 railroad==0.5.0
 Sphinx==8.2.3
 thread==2.0.5
